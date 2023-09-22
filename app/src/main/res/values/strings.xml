@@ -22,5 +22,9 @@
     <string name="button_ok">OK</string>
 
     <string name="pref_key_camera_live_viewport" translatable="false">clv</string>
+    <string name="scan_id_card">SCAN ID CARD</string>
+    <string name="scan_passport">SCAN PASSPORT</string>
+    <string name="read_id_card">READ ID CARD</string>
+    <string name="tap_id_card_passport_via_nfc">Tap ID Card / Passport via NFC...</string>
 
 </resources>

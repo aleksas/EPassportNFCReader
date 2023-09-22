@@ -6,6 +6,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import com.alimert.passportreader.mlkit.other.FrameMetadata;
 import com.alimert.passportreader.mlkit.other.GraphicOverlay;
 import com.alimert.passportreader.model.DocType;
@@ -61,7 +62,7 @@ public class TextRecognitionProcessor {
     public TextRecognitionProcessor(DocType docType, ResultListener resultListener) {
         this.docType = docType;
         this.resultListener = resultListener;
-        textRecognizer = TextRecognition.getClient();
+        textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
     }
 
     //region ----- Exposed Methods -----

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182273265534",
+    "project_id": "age-paycard-validation",
+    "storage_bucket": "age-paycard-validation.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182273265534:android:af328a9c96170339c5ed2f",
+        "android_client_info": {
+          "package_name": "com.alimert.passportreader"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKHSQqgUQek9EzdMBSJBmY-lLdjYmyob0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -158,20 +158,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.btn_scan_id_card:
-                docType = DocType.ID_CARD;
-                requestPermissionForCamera();
-                break;
-            case R.id.btn_scan_passport:
-                docType = DocType.PASSPORT;
-                requestPermissionForCamera();
-                break;
-            case R.id.btn_read:
-                readCard();
-                break;
-            default:
-                break;
+        if (view.getId() == R.id.btn_scan_id_card) {
+            docType = DocType.ID_CARD;
+            requestPermissionForCamera();
+        } else if (view.getId() == R.id.btn_scan_passport) {
+            docType = DocType.PASSPORT;
+            requestPermissionForCamera();
+        } else if (view.getId() == R.id.btn_read) {
+            readCard();
         }
     }
 
@@ -182,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (adapter != null) {
             Intent intent = new Intent(getApplicationContext(), this.getClass());
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             String[][] filter = new String[][]{new String[]{"android.nfc.tech.IsoDep"}};
             adapter.enableForegroundDispatch(this, pendingIntent, null, filter);
         }

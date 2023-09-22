@@ -4,9 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
-
-import com.google.android.gms.vision.CameraSource;
-
+import com.google.mlkit.vision.camera.CameraSourceConfig;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,7 +14,7 @@ public class GraphicOverlay extends View {
     private float widthScaleFactor = 1.0f;
     private int previewHeight;
     private float heightScaleFactor = 1.0f;
-    private int facing = CameraSource.CAMERA_FACING_BACK;
+    private int facing = CameraSourceConfig.CAMERA_FACING_BACK;
     private Set<Graphic> graphics = new HashSet<>();
 
     /**
@@ -67,7 +65,7 @@ public class GraphicOverlay extends View {
          * Adjusts the x coordinate from the preview's coordinate system to the view coordinate system.
          */
         public float translateX(float x) {
-            if (overlay.facing == CameraSource.CAMERA_FACING_FRONT) {
+            if (overlay.facing == CameraSourceConfig.CAMERA_FACING_FRONT) {
                 return overlay.getWidth() - scaleX(x);
             } else {
                 return scaleX(x);
