@@ -84,6 +84,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.alimert.passportreader.ui.CaptureActivity.DOC_TYPE;
 import static com.alimert.passportreader.ui.CaptureActivity.MRZ_RESULT;
@@ -101,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private View mainLayout;
     private View loadingLayout;
+    private TextView loadingInfo;
     private View imageLayout;
     private Button scanIdCard, scanPassport, read;
     private TextView tvResult;
@@ -119,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mainLayout = findViewById(R.id.main_layout);
         loadingLayout = findViewById(R.id.loading_layout);
+        loadingInfo = findViewById(R.id.loading_info);
         imageLayout = findViewById(R.id.image_layout);
         ivPhoto = findViewById(R.id.view_photo);
         tvResult = findViewById(R.id.text_result);
@@ -215,7 +218,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
-            Tag tag = intent.getExtras().getParcelable(NfcAdapter.EXTRA_TAG);
+            Tag tag = Objects.requireNonNull(intent.getExtras()).getParcelable(NfcAdapter.EXTRA_TAG);
+            assert tag != null;
             if (Arrays.asList(tag.getTechList()).contains("android.nfc.tech.IsoDep")) {
                 clearViews();
                 if (passportNumber != null && !passportNumber.isEmpty()
@@ -235,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private class ReadTask extends AsyncTask<Void, Void, Exception> {
+    private class ReadTask extends AsyncTask<Void, String, Exception> {
 
         private IsoDep isoDep;
         private BACKeySpec bacKey;
@@ -249,6 +253,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         DocType docType = DocType.OTHER;
         PersonDetails personDetails = new PersonDetails();
         AdditionalPersonDetails additionalPersonDetails = new AdditionalPersonDetails();
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+
+            loadingInfo.setText(values[0]);
+        }
 
         @Override
         protected Exception doInBackground(Void... params) {
@@ -289,7 +300,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 boolean hashesMatched = true;
                 boolean activeAuth = true;
                 boolean chipAuth = true;
-                boolean docSignatureValid;
+
+                this.publishProgress("Reading sod file");
 
                 CardFileInputStream sodIn = service.getInputStream(PassportService.EF_SOD);
                 SODFile sodFile = new SODFile(sodIn);
@@ -301,58 +313,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d(TAG, "Digest Algorithm: " + digestAlgorithm);
 
                 X509Certificate docSigningCert = sodFile.getDocSigningCertificate();
+                List<X509Certificate> docSigningCerts = sodFile.getDocSigningCertificates();
                 String pemFile = SecurityUtil.convertToPem(docSigningCert);
                 Log.d(TAG, "Document Signer Certificate: " + docSigningCert.toString());
                 Log.d(TAG, "Document Signer Certificate Pem : " + pemFile);
 
                 String digestEncryptionAlgorithm = sodFile.getDigestEncryptionAlgorithm();
-                String signerInfoDigestAlgorithm = sodFile.getSignerInfoDigestAlgorithm();
-
-                byte[] eContent = sodFile.getEContent();
-                byte[] signature = sodFile.getEncryptedDigest();
 
                 MessageDigest digest;
 
-                if (digestEncryptionAlgorithm == null) {
-                    try {
-                        digest = MessageDigest.getInstance(signerInfoDigestAlgorithm);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        digest = MessageDigest.getInstance(signerInfoDigestAlgorithm, new BouncyCastleProvider());
-                    }
-
-                    digest.update(eContent);
-                    byte[] digestBytes = digest.digest();
-                    docSignatureValid = Arrays.equals(digestBytes, signature);
-                } else {
-
-                    if ("SSAwithRSA/PSS".equals(digestEncryptionAlgorithm)) {
-                        digestEncryptionAlgorithm = signerInfoDigestAlgorithm.replace("-", "") + "withRSA/PSS";
-                    } else if ("RSA".equals(digestEncryptionAlgorithm)) {
-                        digestEncryptionAlgorithm = signerInfoDigestAlgorithm.replace("-", "") + "withRSA";
-                    }
-
-                    Log.d(TAG, "Digest Encryption Algorithm: " + digestEncryptionAlgorithm);
-
-                    Signature sig = Signature.getInstance(digestEncryptionAlgorithm, new BouncyCastleProvider());
-
-                    if (digestEncryptionAlgorithm.endsWith("withRSA/PSS")) {
-                        int saltLength = SecurityUtil.findSaltRSA_PSS(digestEncryptionAlgorithm, docSigningCert, eContent, signature);
-                        MGF1ParameterSpec mgf1ParameterSpec = new MGF1ParameterSpec("SHA-256");
-                        PSSParameterSpec pssParameterSpec = new PSSParameterSpec("SHA-256", "MGF1", mgf1ParameterSpec, saltLength, 1);
-                        sig.setParameter(pssParameterSpec);
-                    }
-
-                    sig.initVerify(docSigningCert);
-                    sig.update(eContent);
-                    docSignatureValid = sig.verify(signature);
-                }
+                this.publishProgress("Loading digest algorithm");
 
                 if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
                     digest = MessageDigest.getInstance(digestAlgorithm);
                 } else {
                     digest = MessageDigest.getInstance(digestAlgorithm, new BouncyCastleProvider());
                 }
+
+                this.publishProgress("Reading Personal Details");
 
                 // -- Personal Details -- //
                 CardFileInputStream dg1In = service.getInputStream(PassportService.EF_DG1);
@@ -389,10 +367,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     hashesMatched = false;
                 }
 
+                this.publishProgress("Reading Face Image");
 
                 // -- Face Image -- //
                 CardFileInputStream dg2In = service.getInputStream(PassportService.EF_DG2);
                 DG2File dg2File = new DG2File(dg2In);
+
+                this.publishProgress("Decoding Face Image");
 
                 byte[] dg2StoredHash = sodFile.getDataGroupHashes().get(2);
                 byte[] dg2ComputedHash = digest.digest(dg2File.getEncoded());
@@ -417,6 +398,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     personDetails.setFaceImage(image.getBitmapImage());
                     personDetails.setFaceImageBase64(image.getBase64Image());
                 }
+
+                this.publishProgress("Reading Fingerprint");
 
                 // -- Fingerprint (if exist)-- //
                 try {
@@ -457,6 +440,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.w(TAG, e);
                 }
 
+                this.publishProgress("Reading Portrait Picture");
+
                 // -- Portrait Picture -- //
                 try {
                     CardFileInputStream dg5In = service.getInputStream(PassportService.EF_DG5);
@@ -483,6 +468,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } catch (Exception e) {
                     Log.w(TAG, e);
                 }
+
+                this.publishProgress("Reading Signature");
 
                 // -- Signature (if exist) -- //
                 try {
@@ -511,6 +498,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } catch (Exception e) {
                     Log.w(TAG, e);
                 }
+
+                this.publishProgress("Reading  Additional Personal Details");
 
                 // -- Additional Personal Details (if exist) -- //
                 try {
@@ -549,6 +538,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.w(TAG, e);
                 }
 
+                this.publishProgress("Reading Additional Document Details");
+
                 // -- Additional Document Details (if exist) -- //
                 try {
                     CardFileInputStream dg12In = service.getInputStream(PassportService.EF_DG12);
@@ -568,6 +559,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } catch (Exception e) {
                     Log.w(TAG, e);
                 }
+
+                this.publishProgress("Reading Security Options");
 
                 // -- Security Options (if exist) -- //
                 try {
@@ -625,6 +618,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.w(TAG, e);
                 }
 
+                this.publishProgress("Reading Document (Active Authentication) Public Key");
+
                 // -- Document (Active Authentication) Public Key -- //
                 try {
                     CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
@@ -666,7 +661,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 eDocument.setPassiveAuth(hashesMatched);
                 eDocument.setActiveAuth(activeAuth);
                 eDocument.setChipAuth(chipAuth);
-                eDocument.setDocSignatureValid(docSignatureValid);
+//                eDocument.setDocSignatureValid(docSignatureValid);
 
             } catch (Exception e) {
                 return e;

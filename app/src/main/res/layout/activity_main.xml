@@ -20,6 +20,7 @@
             android:layout_gravity="center_horizontal" />
 
         <TextView
+            android:id="@+id/loading_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/info_loading" />
@@ -88,7 +89,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/tap_id_card_passport_via_nfc" />
+            android:text="Tap ID Card / Passport via NFC..." />
     </LinearLayout>
 
     <LinearLayout
@@ -102,21 +103,21 @@
             android:id="@+id/btn_scan_id_card"
             android:layout_width="140dp"
             android:layout_height="wrap_content"
-            android:text="@string/scan_id_card"
+            android:text="SCAN ID CARD"
             android:layout_gravity="center_horizontal" />
 
         <Button
             android:id="@+id/btn_scan_passport"
             android:layout_width="140dp"
             android:layout_height="wrap_content"
-            android:text="@string/scan_passport"
+            android:text="SCAN PASSPORT"
             android:layout_gravity="center_horizontal" />
 
         <Button
             android:id="@+id/btn_read"
             android:layout_width="140dp"
             android:layout_height="wrap_content"
-            android:text="@string/read_id_card"
+            android:text="READ ID CARD"
             android:layout_gravity="center_horizontal" />
     </LinearLayout>
 

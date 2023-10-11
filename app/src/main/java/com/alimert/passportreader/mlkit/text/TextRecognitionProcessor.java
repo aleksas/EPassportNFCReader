@@ -132,7 +132,7 @@ public class TextRecognitionProcessor {
             // Matcher matcherIDCardTD1Line3 = patternIDCardTD1Line3.matcher(scannedTextBuffer);
 
             //if (matcherIDCardTD1Line1.find() && matcherIDCardTD1Line2.find() && matcherIDCardTD1Line3.find()) {
-            if (matcherIDCardTD1Line1.find() && matcherIDCardTD1Line2.find() && matcherIDCardTD1Line3.find()) {
+            if (matcherIDCardTD1Line1.find() && matcherIDCardTD1Line2.find()) {
                 graphicOverlay.add(textGraphic);
                 String line1 = matcherIDCardTD1Line1.group(0);
                 String line2 = matcherIDCardTD1Line2.group(0);
